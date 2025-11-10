@@ -1,8 +1,10 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from datetime import datetime
 
-app = FastAPI()
+app = FastAPI(title="ARKA SMP Backend")
 
 app.add_middleware(
     CORSMiddleware,
@@ -12,13 +14,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 def read_root():
     return {"message": "Hello from FastAPI Backend!"}
 
+
 @app.get("/api/hello")
 def hello():
     return {"message": "Hello from the backend API!"}
+
 
 @app.get("/test")
 def test_database():
@@ -58,11 +63,40 @@ def test_database():
         response["database"] = f"❌ Error: {str(e)[:50]}"
     
     # Check environment variables
-    import os
     response["database_url"] = "✅ Set" if os.getenv("DATABASE_URL") else "❌ Not Set"
     response["database_name"] = "✅ Set" if os.getenv("DATABASE_NAME") else "❌ Not Set"
     
     return response
+
+
+class ServerStatus(BaseModel):
+    name: str = "ARKA SMP"
+    online: bool
+    player_count: int
+    max_players: int
+    motd: str
+    last_updated: str
+
+
+@app.get("/server/status", response_model=ServerStatus)
+def server_status():
+    """
+    Mock server status endpoint for ARKA SMP.
+    Replace with real Minecraft ping integration later if desired.
+    """
+    # Simple rotating fake player count based on minute to feel alive
+    minute = datetime.utcnow().minute
+    base = 24
+    player_count = (minute % base)
+    max_players = 100
+    motd = "A New Era Begins • Fantasy Economy • Quests • Events"
+    return ServerStatus(
+        online=True,
+        player_count=player_count,
+        max_players=max_players,
+        motd=motd,
+        last_updated=datetime.utcnow().isoformat() + "Z",
+    )
 
 
 if __name__ == "__main__":
